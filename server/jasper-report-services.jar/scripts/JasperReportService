@@ -25,36 +25,38 @@ class JasperReportService  {
 		def params = o.parameters;				
 		def data = o.data;
 		def template = o.template;
-		def modulename = o.modulename;
 		def reportid = o.reportid;
 		def org = o.org;
-		def connection = o.connection;
 
 		try {
-			if(!modulename) throw new Exception("modulename is required in JasperReportService.generateReport");
-			if(!template) throw new Exception("template is required in JasperReportService.generateReport");
 
 			// -----------------------------------------------------------
 			// in case there is no data found, get the data automatically
 			// -----------------------------------------------------------			
 			if( !data ) {
+				if(!params ) {
+					//if refid is passed, put it in parameters as objid field
+					if( o.refid ) params = [objid: o.refid ];
+				}
 				if(!params) throw new Exception("parameters is required in JasperReportService.generateReport")
-				if(!connection) connection = modulename;
-				def svc = dSvc.lookup("FormReportService", connection );
+				def svc = dSvc.lookup("FormReportService" );
 				def result = svc.getData( [reportid: reportid, parameters: params ]  );
 				data = result.data;
 			}
 
+			if(data.template) template = data.template;
+			if(!template) throw new Exception("template is required in JasperReportService.generateReport");
+
 			// --------------------------------------------------------
 			// setup the reports paths
 			// --------------------------------------------------------
-			def _basepath = templatePath + modulename + "/";
+			def _basepath = templatePath;
 			def _customPath = null;
 			if( org ) {
-				_customPath = customPath + org + "/templates/" + modulename + "/"
+				_customPath = customPath + org + "/templates/" 
 			}
 			else {
-				_customPath = customPath + "templates/" + modulename + "/";
+				_customPath = customPath + "templates/" ;
 			}
 
 			// --------------------------------------------------------
@@ -70,10 +72,10 @@ class JasperReportService  {
 			files.listFiles( filter ).each {
 				urls << it.toURI().toURL();
 			}
-
 			// --------------------------------------------------------
 			// fix filename and prefix if any
 			// --------------------------------------------------------
+
 			def _fprefix = null;
 			if( template.contains("/") ) {
 				int lastIndex = template.lastIndexOf("/");
